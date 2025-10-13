@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/Button"
 import { showToast } from "@/components/Toast"
 import { ProjectCard } from "@/components/ProjectCard"
-import { LogOut, Sparkles, ImageIcon, Zap, Plus, FolderOpen } from "lucide-react"
+import { LogOut, Sparkles, ImageIcon, Zap, Plus, FolderOpen, User } from "lucide-react"
 import type { Project } from "@/types/project"
 
 export default function DashboardPage() {
@@ -58,6 +58,13 @@ export default function DashboardPage() {
     if (!isLoading && !isAuthenticated) {
       router.push("/login")
     } else if (isAuthenticated) {
+      // aqui verifico token valido
+      const token = localStorage.getItem("access_token")
+      if (!token) {
+        console.log('[Dashboard] No hay token válido, redirigiendo a login')
+        router.push("/login")
+        return
+      }
       setProjects(mockProjects)
     }
   }, [isAuthenticated, isLoading, router])
@@ -87,6 +94,10 @@ export default function DashboardPage() {
     showToast(`Abriendo proyecto: ${project.title}`, "success")
   }
 
+  const handleProfileClick = () => {
+    router.push("/profile")
+  }
+
   if (isLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -108,10 +119,18 @@ export default function DashboardPage() {
               PixPro
             </h1>
           </div>
-          <Button onClick={handleLogout} variant="outline" size="sm">
-            <LogOut className="w-4 h-4 mr-2" />
-            Cerrar Sesión
-          </Button>
+          
+          {/* botones de navegacion */}
+          <div className="flex items-center gap-3">
+            <Button onClick={handleProfileClick} variant="outline" size="sm">
+              <User className="w-4 h-4 mr-2" />
+              Perfil
+            </Button>
+            <Button onClick={handleLogout} variant="outline" size="sm">
+              <LogOut className="w-4 h-4 mr-2" />
+              Cerrar Sesión
+            </Button>
+          </div>
         </div>
       </header>
 
