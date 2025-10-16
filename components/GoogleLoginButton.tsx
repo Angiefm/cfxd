@@ -114,9 +114,11 @@ export function GoogleLoginButton({
 
   if (!isScriptLoaded) {
     return (
-      <div className="w-full h-[44px] rounded-lg border border-input bg-background flex items-center justify-center">
-        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-        <span className="ml-2 text-xs text-muted-foreground">Loading...</span>
+      <div className="w-full h-[44px] rounded-lg border border-input bg-background flex items-center justify-center hover:border-primary/50 transition-all duration-200">
+        <Loader2 className="w-4 h-4 animate-spin text-primary" />
+        <span className="ml-2 text-xs text-muted-foreground font-medium">
+          Cargando...
+        </span>
       </div>
     );
   }
@@ -132,13 +134,16 @@ export function GoogleLoginButton({
   }
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full group">
       {isLoading && (
         <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-lg flex items-center justify-center z-10">
           <Loader2 className="w-5 h-5 animate-spin text-primary" />
         </div>
       )}
-      <div ref={buttonRef} className="w-full" />
+      <div
+        ref={buttonRef}
+        className="w-full transition-all duration-200 group-hover:scale-[1.02] group-active:scale-[0.98] rounded-lg overflow-hidden"
+      />
     </div>
   );
 }

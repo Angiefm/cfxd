@@ -207,28 +207,27 @@ export default function RegisterPage() {
             Crear Cuenta
           </Button>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                O regístrate con
-              </span>
-            </div>
+          <div className="relative my-8 flex items-center">
+            <div className="flex-grow border-t border-border/50"></div>
+            <span className="mx-4 bg-background text-xs font-medium text-muted-foreground/80 uppercase tracking-wide px-3 py-1 relative z-10">
+              O regístrate con
+            </span>
+            <div className="flex-grow border-t border-border/50"></div>
           </div>
 
           <GoogleLoginButton text="signup_with" />
 
-          <p className="text-center text-sm text-muted-foreground">
-            ¿Ya tienes cuenta?{" "}
-            <Link
-              href="/login"
-              className="text-primary hover:text-accent transition-colors font-medium"
-            >
-              Inicia sesión
-            </Link>
-          </p>
+          <div className="mt-8">
+            <p className="text-center text-sm text-muted-foreground">
+              ¿Ya tienes cuenta?{" "}
+              <Link
+                href="/login"
+                className="text-primary hover:text-accent hover:underline transition-all duration-200 font-semibold hover:bg-primary/5 px-2 py-1 rounded-md hover:shadow-sm"
+              >
+                Inicia sesión
+              </Link>
+            </p>
+          </div>
         </form>
       </div>
     </AuthLayout>
