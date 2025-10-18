@@ -3,6 +3,8 @@ variables:
   CI: "true"
   NODE_OPTIONS: "--experimental-vm-modules"
   NPM_CONFIG_CACHE: ".npm"
+  NEXT_PUBLIC_API_URL: "https://api.pixpro.com"
+  NEXT_PUBLIC_API_PORT: "3001"
 
 stages:
   - code-quality
