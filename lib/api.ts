@@ -19,7 +19,7 @@ class ApiClient {
     const fullUrl = process.env.NEXT_PUBLIC_API_URL;
 
     if (!port || !fullUrl) {
-      throw new Error('Debes definir NEXT_PUBLIC_API_URL y NEXT_PUBLIC_API_PORT en el .env');
+      throw new Error('You must define NEXT_PUBLIC_API_URL and NEXT_PUBLIC_API_PORT in the .env');
     }
 
     const isBrowser = typeof window !== 'undefined';

@@ -1,7 +1,32 @@
-# imagen base de Nginx
+# Build stage
+FROM node:20-alpine AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN npm run build
+
+# Production stage
 FROM nginx:stable-alpine
 
-# un HTML de Hola Mundo
-RUN echo '<!DOCTYPE html><html><head><title>Frontend</title></head><body><h1>Hola Mundo desde Frontend!</h1></body></html>' > /usr/share/nginx/html/index.html
+# Copy build files to Nginx
+COPY --from=builder /app/out /usr/share/nginx/html
 
-# nginx pone por defecto en el puerto 80
+# Copy custom Nginx configuration if exists
+# COPY nginx.conf /etc/nginx/nginx.conf
+
+# Expose port 80
+EXPOSE 80
+
+# Default Nginx command
+CMD ["nginx", "-g", "daemon off;"]
