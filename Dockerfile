@@ -17,8 +17,8 @@ COPY . .
 COPY .env* ./
 
 # Set environment variables for build
-ENV NEXT_PUBLIC_API_URL=https://api.pixpro.com
-ENV NEXT_PUBLIC_API_PORT=3001
+ENV NEXT_PUBLIC_API_URL=http://backend
+ENV NEXT_PUBLIC_API_PORT=3000
 
 # Build the application
 RUN npm run build
