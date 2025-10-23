@@ -1,82 +1,113 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import * as authService from "@/services/authService"
-import type { User } from "@/types/auth"
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
+import * as authService from "@/services/authService";
+import * as googleAuthService from "@/services/googleAuthService";
+import type { User } from "@/types/auth";
 
 interface AuthContextType {
-  user: User | null
-  isAuthenticated: boolean
-  isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
-  register: (name: string, displayName: string, email: string, password: string, phone: string) => Promise<void>
-  logout: () => Promise<void>
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<void>;
+  register: (
+    name: string,
+    displayName: string,
+    email: string,
+    password: string,
+    phone: string
+  ) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing token on mount
   useEffect(() => {
-    const token = localStorage.getItem("access_token")
+    const token = localStorage.getItem("access_token");
     if (token) {
-      // In a real app, you would validate the token with the backend
-      // For now, we'll just set a mock user
-      const storedUser = localStorage.getItem("user")
+      const storedUser = localStorage.getItem("user");
       if (storedUser) {
-        setUser(JSON.parse(storedUser))
+        setUser(JSON.parse(storedUser));
       }
     }
-    setIsLoading(false)
-  }, [])
+    setIsLoading(false);
+  }, []);
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const response = await authService.login({ email, password })
-      localStorage.setItem("access_token", response.access_token)
-      localStorage.setItem("user", JSON.stringify(response.user))
-      setUser(response.user)
+      const response = await authService.login({ email, password });
+      localStorage.setItem("access_token", response.access_token);
+      localStorage.setItem("user", JSON.stringify(response.user));
+      setUser(response.user);
     } catch (error) {
-      throw error
+      throw error;
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  const register = async (name: string, displayName: string, email: string, password: string, phone: string) => {
-    setIsLoading(true)
+  const register = async (
+    name: string,
+    displayName: string,
+    email: string,
+    password: string,
+    phone: string
+  ) => {
+    setIsLoading(true);
     try {
-      await authService.register({ name, displayName, email, password, phone })
+      await authService.register({ name, displayName, email, password, phone });
     } catch (error) {
-      throw error
+      throw error;
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
+
+  const loginWithGoogle = async (credential: string) => {
+    setIsLoading(true);
+    try {
+      const response = await googleAuthService.loginWithGoogleToken(credential);
+      localStorage.setItem("access_token", response.access_token);
+      localStorage.setItem("user", JSON.stringify(response.user));
+      setUser(response.user);
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const logout = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      localStorage.removeItem("access_token")
-      localStorage.removeItem("user")
-      setUser(null)
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user");
+      setUser(null);
       try {
-        await authService.logout()
+        await authService.logout();
       } catch (backendError) {
-        console.log("Backend logout failed, but local logout completed")
+        console.log("Backend logout failed, but local logout completed");
       }
     } catch (error) {
-      localStorage.removeItem("access_token")
-      localStorage.removeItem("user")
-      setUser(null)
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user");
+      setUser(null);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <AuthContext.Provider
@@ -85,19 +116,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         login,
+        loginWithGoogle,
         register,
         logout,
       }}
     >
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context
+  return context;
 }

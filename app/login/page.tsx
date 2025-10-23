@@ -1,22 +1,23 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { AuthLayout } from "@/components/AuthLayout"
-import { Input } from "@/components/Input"
-import { Button } from "@/components/Button"
-import { useAuth } from "@/hooks/useAuth"
-import { useForm } from "@/hooks/useForm"
-import { showToast } from "@/components/Toast"
-import { AlertCircle } from "lucide-react"
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { AuthLayout } from "@/components/AuthLayout";
+import { Input } from "@/components/Input";
+import { Button } from "@/components/Button";
+import { GoogleLoginButton } from "@/components/GoogleLoginButton";
+import { useAuth } from "@/hooks/useAuth";
+import { useForm } from "@/hooks/useForm";
+import { showToast } from "@/components/Toast";
+import { AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
-  const router = useRouter()
-  const { login, isLoading } = useAuth()
-  const [error, setError] = useState("")
+  const router = useRouter();
+  const { login, isLoading } = useAuth();
+  const [error, setError] = useState("");
 
   const { values, errors, handleChange, handleBlur, validateForm } = useForm({
     initialValues: {
@@ -25,44 +26,51 @@ export default function LoginPage() {
     },
     validationRules: {
       email: (value) => {
-        if (!value) return "El correo es obligatorio"
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Formato de correo inválido"
-        return ""
+        if (!value) return "El correo es obligatorio";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
+          return "Formato de correo inválido";
+        return "";
       },
       password: (value) => {
-        if (!value) return "La contraseña es obligatoria"
-        return ""
+        if (!value) return "La contraseña es obligatoria";
+        return "";
       },
     },
-  })
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
+    e.preventDefault();
+    setError("");
 
     if (!validateForm()) {
-      return
+      return;
     }
 
     try {
-      await login(values.email, values.password)
-      showToast("¡Bienvenido de nuevo!", "success")
-      router.push("/dashboard")
+      await login(values.email, values.password);
+      showToast("¡Bienvenido de nuevo!", "success");
+      router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Error al iniciar sesión")
-      showToast(err.message || "Error al iniciar sesión", "error")
+      setError(err.message || "Error al iniciar sesión");
+      showToast(err.message || "Error al iniciar sesión", "error");
     }
-  }
+  };
 
   return (
     <AuthLayout>
       <div className="w-full max-w-md">
         <div className="text-center mb-8 animate-fade-in-up">
-          <h2 className="text-3xl font-bold text-foreground mb-2">Iniciar Sesión</h2>
+          <h2 className="text-3xl font-bold text-foreground mb-2">
+            Iniciar Sesión
+          </h2>
           <p className="text-muted-foreground">Accede a tu cuenta de PixPro</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-5 animate-fade-in-up"
+          style={{ animationDelay: "0.1s" }}
+        >
           {error && (
             <div className="flex items-center gap-2 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -95,7 +103,10 @@ export default function LoginPage() {
           />
 
           <div className="flex items-center justify-between text-sm">
-            <Link href="/forgot-password" className="text-primary hover:text-accent transition-colors">
+            <Link
+              href="/forgot-password"
+              className="text-primary hover:text-accent hover:underline transition-all duration-200 font-medium hover:shadow-sm"
+            >
               ¿Olvidaste tu contraseña?
             </Link>
           </div>
@@ -104,12 +115,27 @@ export default function LoginPage() {
             Iniciar Sesión
           </Button>
 
-          <p className="text-center text-sm text-muted-foreground">
-            ¿No tienes cuenta?{" "}
-            <Link href="/register" className="text-primary hover:text-accent transition-colors font-medium">
-              Regístrate aquí
-            </Link>
-          </p>
+          <div className="relative my-8 flex items-center">
+            <div className="flex-grow border-t border-border/50"></div>
+            <span className="mx-4 bg-background text-xs font-medium text-muted-foreground/80 uppercase tracking-wide px-3 py-1 relative z-10">
+              O continúa con
+            </span>
+            <div className="flex-grow border-t border-border/50"></div>
+          </div>
+
+          <GoogleLoginButton text="signin_with" />
+
+          <div className="mt-8">
+            <p className="text-center text-sm text-muted-foreground">
+              ¿No tienes cuenta?{" "}
+              <Link
+                href="/register"
+                className="text-primary hover:text-accent hover:underline transition-all duration-200 font-semibold hover:bg-primary/5 px-2 py-1 rounded-md hover:shadow-sm"
+              >
+                Regístrate aquí
+              </Link>
+            </p>
+          </div>
         </form>
 
         {/* Demo credentials hint */}
@@ -119,5 +145,5 @@ export default function LoginPage() {
         </div>
       </div>
     </AuthLayout>
-  )
+  );
 }
