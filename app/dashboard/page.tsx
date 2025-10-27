@@ -91,7 +91,7 @@ export default function DashboardPage() {
   }
 
   const handleProjectClick = (project: Project) => {
-    showToast(`Abriendo proyecto: ${project.title}`, "success")
+    router.push(`/project/${project.id}`)
   }
 
   const handleProfileClick = () => {
