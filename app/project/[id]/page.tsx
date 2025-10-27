@@ -2,6 +2,17 @@
 
 import type React from "react"
 
+export async function generateStaticParams() {
+  // For static export, we need to provide possible IDs
+  // Since this is a demo, we'll return some mock IDs
+  return [
+    { id: '1' },
+    { id: '2' },
+    { id: '3' },
+    { id: '4' }
+  ]
+}
+
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
