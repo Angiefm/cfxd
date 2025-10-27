@@ -1,4 +1,13 @@
+"use client"
+
 import type React from "react"
+import { useState, useEffect } from "react"
+import { useParams } from "next/navigation"
+import { useAuth } from "@/hooks/useAuth"
+import { showToast } from "@/components/Toast"
+import { ImageUpload } from "@/components/ImageUpload"
+import { ImageGallery } from "@/components/ImageGallery"
+import type { ImageData } from "@/services/imageService"
 
 export async function generateStaticParams() {
   return [
@@ -10,6 +19,62 @@ export async function generateStaticParams() {
 }
 
 function ProjectPage() {
+  const params = useParams()
+  const { user, isAuthenticated, isLoading } = useAuth()
+  const [selectedImage, setSelectedImage] = useState<ImageData | null>(null)
+  const [prompt, setPrompt] = useState("")
+  const [isProcessing, setIsProcessing] = useState(false)
+
+  const projectId = params.id as string
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      window.location.href = "/login"
+      return
+    }
+  }, [isAuthenticated, isLoading])
+
+  const handleImageSelect = (image: ImageData) => {
+    setSelectedImage(image)
+  }
+
+  const handleApplyPrompt = async () => {
+    if (!prompt.trim()) {
+      showToast("Por favor ingresa un prompt", "error")
+      return
+    }
+
+    if (!selectedImage) {
+      showToast("Selecciona una imagen primero", "error")
+      return
+    }
+
+    setIsProcessing(true)
+    setTimeout(() => {
+      setIsProcessing(false)
+      showToast("Prompt aplicado exitosamente", "success")
+    }, 2000)
+  }
+
+  const handleSaveChanges = () => {
+    showToast("Cambios guardados exitosamente", "success")
+  }
+
+  const handleDownload = () => {
+    showToast("Descarga iniciada", "success")
+  }
+
+  const handleShare = () => {
+    showToast("Enlace copiado al portapapeles", "success")
+  }
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
+      </div>
+    )
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
       {/* Header */}
@@ -68,20 +133,15 @@ function ProjectPage() {
               <div className="glass-strong rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-foreground">Imágenes del Proyecto</h2>
-                  <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    Subir Imagen
-                  </button>
+                  <ImageUpload projectId={projectId} />
                 </div>
 
-                {/* Image Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="col-span-full text-center py-8 text-muted-foreground">
-                    No hay imágenes en este proyecto
-                  </div>
-                </div>
+                {/* Image Gallery */}
+                <ImageGallery
+                  projectId={projectId}
+                  selectedImage={selectedImage}
+                  onImageSelect={handleImageSelect}
+                />
               </div>
 
               {/* Selected Image Preview */}
@@ -95,8 +155,18 @@ function ProjectPage() {
                   </button>
                 </div>
 
-                <div className="aspect-video rounded-xl overflow-hidden bg-secondary/20 flex items-center justify-center text-muted-foreground">
-                  Selecciona una imagen para ver la vista previa
+                <div className="aspect-video rounded-xl overflow-hidden bg-secondary/20">
+                  {selectedImage ? (
+                    <img
+                      src={selectedImage.signed_url || selectedImage.url}
+                      alt={selectedImage.file_name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      Selecciona una imagen para ver la vista previa
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -116,16 +186,31 @@ function ProjectPage() {
 
                 <div className="space-y-4">
                   <textarea
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
                     placeholder="Describe cómo quieres editar la imagen... (ej: 'Haz que el cielo sea más azul y agrega nubes dramáticas')"
                     className="w-full h-32 px-4 py-3 rounded-xl border border-border/50 bg-background/50 focus:border-primary/50 focus:outline-none resize-none text-sm"
                   />
 
                   <div className="flex gap-2">
-                    <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      Aplicar Prompt
+                    <button
+                      onClick={handleApplyPrompt}
+                      disabled={isProcessing || !selectedImage}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm disabled:opacity-50"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+                          Procesando...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                          Aplicar Prompt
+                        </>
+                      )}
                     </button>
                     <button className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-secondary/50 transition-colors">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
