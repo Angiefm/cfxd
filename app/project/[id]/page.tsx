@@ -9,15 +9,6 @@ import { ImageUpload } from "@/components/ImageUpload"
 import { ImageGallery } from "@/components/ImageGallery"
 import type { ImageData } from "@/services/imageService"
 
-export async function generateStaticParams() {
-  return [
-    { id: '1' },
-    { id: '2' },
-    { id: '3' },
-    { id: '4' }
-  ]
-}
-
 function ProjectPage() {
   const params = useParams()
   const { user, isAuthenticated, isLoading } = useAuth()
