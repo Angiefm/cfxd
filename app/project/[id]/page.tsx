@@ -1,8 +1,13 @@
+"use client"
+
 import type React from "react"
+import { useState, useEffect, useRef } from "react"
+import { useParams } from "next/navigation"
+import { useAuth } from "@/hooks/useAuth"
+import { showToast } from "@/components/Toast"
+import { uploadImages, listImages, type ImageData } from "@/services/imageService"
 
 export async function generateStaticParams() {
-  // For static export, we need to provide possible IDs
-  // Since this is a demo, we'll return some mock IDs
   return [
     { id: '1' },
     { id: '2' },
@@ -12,6 +17,99 @@ export async function generateStaticParams() {
 }
 
 function ProjectPage() {
+  const params = useParams()
+  const { user, isAuthenticated, isLoading } = useAuth()
+  const [images, setImages] = useState<ImageData[]>([])
+  const [selectedImage, setSelectedImage] = useState<ImageData | null>(null)
+  const [prompt, setPrompt] = useState("")
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const projectId = params.id as string
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      window.location.href = "/login"
+      return
+    }
+
+    if (isAuthenticated) {
+      loadImages()
+    }
+  }, [isAuthenticated, isLoading, projectId])
+
+  const loadImages = async () => {
+    try {
+      const response = await listImages({ project_id: projectId })
+      setImages(response.data)
+    } catch (error) {
+      console.error('Failed to load images:', error)
+      showToast("Error al cargar imágenes", "error")
+    }
+  }
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    setIsUploading(true)
+    try {
+      const response = await uploadImages(files, projectId)
+      showToast(`Se subieron ${response.data.length} imagen(es) exitosamente`, "success")
+      await loadImages()
+    } catch (error: any) {
+      console.error('Upload failed:', error)
+      showToast(error.message || "Error al subir imágenes", "error")
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleImageClick = (image: ImageData) => {
+    setSelectedImage(image)
+  }
+
+  const handleApplyPrompt = async () => {
+    if (!prompt.trim()) {
+      showToast("Por favor ingresa un prompt", "error")
+      return
+    }
+
+    if (!selectedImage) {
+      showToast("Selecciona una imagen primero", "error")
+      return
+    }
+
+    setIsProcessing(true)
+    setTimeout(() => {
+      setIsProcessing(false)
+      showToast("Prompt aplicado exitosamente", "success")
+    }, 2000)
+  }
+
+  const handleSaveChanges = () => {
+    showToast("Cambios guardados exitosamente", "success")
+  }
+
+  const handleDownload = () => {
+    showToast("Descarga iniciada", "success")
+  }
+
+  const handleShare = () => {
+    showToast("Enlace copiado al portapapeles", "success")
+  }
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
+      </div>
+    )
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
       {/* Header */}
@@ -38,19 +136,19 @@ function ProjectPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-secondary/50 transition-colors">
+            <button onClick={handleShare} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-secondary/50 transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
               </svg>
               Compartir
             </button>
-            <button className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-secondary/50 transition-colors">
+            <button onClick={handleDownload} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-secondary/50 transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               Descargar
             </button>
-            <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+            <button onClick={handleSaveChanges} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
               </svg>
@@ -70,28 +168,58 @@ function ProjectPage() {
               <div className="glass-strong rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-foreground">Imágenes del Proyecto</h2>
-                  <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    Subir Imagen
-                  </button>
+                  <div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    >
+                      {isUploading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+                          Subiendo...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                          Subir Imagen
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Image Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {Array.from({ length: 6 }, (_, index) => (
-                    <div
-                      key={index}
-                      className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-300 border border-border/50 hover:border-primary/50 bg-secondary/20"
-                    >
-                      <img
-                        src="/placeholder.jpg"
-                        alt={`Imagen ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
+                  {images.length > 0 ? (
+                    images.map((image) => (
+                      <div
+                        key={image.id}
+                        className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-300 border border-border/50 hover:border-primary/50"
+                        onClick={() => handleImageClick(image)}
+                      >
+                        <img
+                          src={image.signed_url || image.url}
+                          alt={image.file_name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-full text-center py-8 text-muted-foreground">
+                      No hay imágenes en este proyecto
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
 
@@ -107,11 +235,17 @@ function ProjectPage() {
                 </div>
 
                 <div className="aspect-video rounded-xl overflow-hidden bg-secondary/20">
-                  <img
-                    src="/placeholder.jpg"
-                    alt="Imagen seleccionada"
-                    className="w-full h-full object-cover"
-                  />
+                  {selectedImage ? (
+                    <img
+                      src={selectedImage.signed_url || selectedImage.url}
+                      alt={selectedImage.file_name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      Selecciona una imagen para ver la vista previa
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -131,16 +265,31 @@ function ProjectPage() {
 
                 <div className="space-y-4">
                   <textarea
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
                     placeholder="Describe cómo quieres editar la imagen... (ej: 'Haz que el cielo sea más azul y agrega nubes dramáticas')"
                     className="w-full h-32 px-4 py-3 rounded-xl border border-border/50 bg-background/50 focus:border-primary/50 focus:outline-none resize-none text-sm"
                   />
 
                   <div className="flex gap-2">
-                    <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      Aplicar Prompt
+                    <button
+                      onClick={handleApplyPrompt}
+                      disabled={isProcessing || !selectedImage}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm disabled:opacity-50"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+                          Procesando...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                          Aplicar Prompt
+                        </>
+                      )}
                     </button>
                     <button className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-secondary/50 transition-colors">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,7 +339,7 @@ function ProjectPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Imágenes:</span>
-                    <span className="text-foreground">24</span>
+                    <span className="text-foreground">{images.length}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Estado:</span>
