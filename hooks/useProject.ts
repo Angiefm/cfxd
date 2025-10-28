@@ -47,7 +47,7 @@ export function useProject(): UseProjectReturn {
     setIsCreating(true)
     try {
       const newProject = await createProject(data)
-      setProjects(prev => [newProject, ...prev])
+      setProjects(prev => [newProject, ...(prev || [])])
       showToast("Proyecto creado exitosamente", "success")
     } catch (error: any) {
       console.error('Failed to create project:', error)
