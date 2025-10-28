@@ -51,7 +51,7 @@ export function useProject(): UseProjectReturn {
     try {
       const newProject = await createProject(data)
       setProjects(prev => {
-        const currentProjects = prev || []
+        const currentProjects = Array.isArray(prev) ? prev : []
         return [newProject, ...currentProjects]
       })
       showToast("Proyecto creado exitosamente", "success")
