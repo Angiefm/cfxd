@@ -28,8 +28,12 @@ export interface GoogleAuthCredentials {
 }
 
 export interface LoginResponse {
-  access_token: string;
+  status: string;
+  message: string;
   user: User;
+  token: {
+    access_token: string;
+  };
 }
 
 export interface ApiError {

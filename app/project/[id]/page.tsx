@@ -3,7 +3,6 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import { useAuth } from "@/hooks/useAuth"
 import { showToast } from "@/components/Toast"
 import { ImageUpload } from "@/components/ImageUpload"
 import { ImageGallery } from "@/components/ImageGallery"
@@ -11,19 +10,27 @@ import type { ImageData } from "@/services/imageService"
 
 function ProjectPage() {
   const params = useParams()
-  const { user, isAuthenticated, isLoading } = useAuth()
   const [selectedImage, setSelectedImage] = useState<ImageData | null>(null)
   const [prompt, setPrompt] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   const projectId = params.id as string
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    const token = localStorage.getItem("access_token")
+    if (!token) {
       window.location.href = "/login"
       return
     }
-  }, [isAuthenticated, isLoading])
+    setIsAuthenticated(true)
+    setIsLoading(false)
+  }, [])
+
+  const handleBackToDashboard = () => {
+    window.location.href = "/dashboard"
+  }
 
   const handleImageSelect = (image: ImageData) => {
     setSelectedImage(image)
@@ -72,7 +79,7 @@ function ProjectPage() {
       <header className="border-b border-border/50 glass-strong">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary/50 transition-colors">
+            <button onClick={handleBackToDashboard} className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary/50 transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>

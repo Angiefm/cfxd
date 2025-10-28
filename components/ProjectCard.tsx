@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { Folder, Image, Calendar } from "lucide-react"
-import type { Project } from "@/types/project"
+import type { Project } from "@/services/projectService"
 
 interface ProjectCardProps {
   project: Project
@@ -35,13 +35,13 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
         </div>
         <div className="flex items-center gap-1 text-sm text-muted-foreground">
           <Image className="w-4 h-4" />
-          <span>{project.imageCount}</span>
+          <span>0</span>
         </div>
       </div>
 
       <div className="space-y-2">
         <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-          {project.title}
+          {project.name}
         </h3>
         
         {project.description && (
@@ -59,9 +59,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
       <div className="mt-4 pt-4 border-t border-border/30">
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground">
-            {project.imageCount === 0 ? 'Sin imágenes' : 
-             project.imageCount === 1 ? '1 imagen' : 
-             `${project.imageCount} imágenes`}
+            Sin imágenes
           </span>
           <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
         </div>
