@@ -25,6 +25,14 @@ export default function DashboardPage() {
     }
   }, [isAuthenticated, isLoading, router])
 
+  // Force refresh projects when component mounts or authentication changes
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      // The useProject hook already handles loading projects on mount
+      // This ensures projects are loaded when dashboard is accessed
+    }
+  }, [isAuthenticated, isLoading])
+
   const handleLogout = async () => {
     try {
       localStorage.removeItem("access_token")

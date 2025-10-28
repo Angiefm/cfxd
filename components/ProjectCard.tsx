@@ -17,11 +17,19 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    })
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) {
+        return 'Fecha inválida'
+      }
+      return date.toLocaleDateString('es-ES', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      })
+    } catch (error) {
+      return 'Fecha inválida'
+    }
   }
 
   return (
