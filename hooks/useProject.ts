@@ -30,6 +30,9 @@ export function useProject(): UseProjectReturn {
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  // Initialize projects as empty array if undefined
+  const safeProjects = projects || []
+
   const refreshProjects = useCallback(async () => {
     setIsLoading(true)
     try {
@@ -47,7 +50,10 @@ export function useProject(): UseProjectReturn {
     setIsCreating(true)
     try {
       const newProject = await createProject(data)
-      setProjects(prev => [newProject, ...(prev || [])])
+      setProjects(prev => {
+        const currentProjects = prev || []
+        return [newProject, ...currentProjects]
+      })
       showToast("Proyecto creado exitosamente", "success")
     } catch (error: any) {
       console.error('Failed to create project:', error)
