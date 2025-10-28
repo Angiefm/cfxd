@@ -16,7 +16,7 @@ import type { Project } from "@/services/projectService"
 export default function DashboardPage() {
   const router = useRouter()
   const { user, logout, isAuthenticated, isLoading } = useAuth()
-  const { projects, isLoading: isProjectsLoading, createNewProject, isCreating } = useProject()
+  const { projects, isLoading: isProjectsLoading, createNewProject, isCreating, refreshProjects } = useProject()
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   useEffect(() => {
@@ -28,10 +28,10 @@ export default function DashboardPage() {
   // Force refresh projects when component mounts or authentication changes
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      // The useProject hook already handles loading projects on mount
-      // This ensures projects are loaded when dashboard is accessed
+      // Force refresh to ensure projects are loaded
+      refreshProjects()
     }
-  }, [isAuthenticated, isLoading])
+  }, [isAuthenticated, isLoading, refreshProjects])
 
   const handleLogout = async () => {
     try {
