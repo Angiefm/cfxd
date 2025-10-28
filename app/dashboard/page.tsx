@@ -9,13 +9,15 @@ import { useProject } from "@/hooks/useProject"
 import { Button } from "@/components/Button"
 import { showToast } from "@/components/Toast"
 import { ProjectCard } from "@/components/ProjectCard"
+import { CreateProjectModal } from "@/components/CreateProjectModal"
 import { LogOut, Sparkles, ImageIcon, Zap, Plus, FolderOpen, User } from "lucide-react"
 import type { Project } from "@/services/projectService"
 
 export default function DashboardPage() {
   const router = useRouter()
   const { user, logout, isAuthenticated, isLoading } = useAuth()
-  const { projects, isLoading: isProjectsLoading, createNewProject } = useProject()
+  const { projects, isLoading: isProjectsLoading, createNewProject, isCreating } = useProject()
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -50,6 +52,14 @@ export default function DashboardPage() {
 
   const handleProfileClick = () => {
     router.push("/profile")
+  }
+
+  const handleCreateProject = () => {
+    setIsCreateModalOpen(true)
+  }
+
+  const handleCreateProjectSubmit = async (name: string, description: string) => {
+    await createNewProject({ name, description })
   }
 
   if (isLoading || !isAuthenticated) {
@@ -118,8 +128,8 @@ export default function DashboardPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4 sm:mb-0">
                 Mis Proyectos
               </h2>
-              <Button 
-                onClick={() => showToast("Función de crear proyecto próximamente", "info")}
+              <Button
+                onClick={handleCreateProject}
                 className="w-full sm:w-auto"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -248,6 +258,14 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* Create Project Modal */}
+      <CreateProjectModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreateProject={handleCreateProjectSubmit}
+        isCreating={isCreating}
+      />
     </div>
   )
 }
