@@ -50,6 +50,25 @@ class ApiClient {
       },
     });
 
+    // Add request interceptor to include auth token
+    this.axiosInstance.interceptors.request.use(
+      (config) => {
+        if (typeof window !== 'undefined') {
+          const token = localStorage.getItem('access_token');
+          if (token && token !== 'undefined' && config.headers) {
+            config.headers.Authorization = `Bearer ${token}`;
+            console.log("Enviando token en header:", config.headers.Authorization);
+          }
+        }
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
+
+    this.setupInterceptors();
+
     this.setupInterceptors();
   }
 
@@ -63,6 +82,11 @@ class ApiClient {
         }
 
         if (error.response?.status === 401 && !originalRequest._retry) {
+          // Don't auto-refresh for image routes to avoid redirect loops
+          if (originalRequest.url?.includes('/images/')) {
+            return Promise.reject(error);
+          }
+
           if (this.isRefreshing) {
             return new Promise((resolve, reject) => {
               this.failedQueue.push({ resolve, reject });
