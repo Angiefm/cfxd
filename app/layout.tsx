@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/hooks/useAuth"
 import { Toaster } from "@/components/Toast"
+import Footer from "@/components/footer"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -13,7 +14,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "PixPro - Procesamiento inteligente de imágenes con IA",
   description: "Rápido, elegante y seguro",
-    generator: 'v0.app'
+  generator: "v0.app",
 }
 
 export default function RootLayout({
@@ -25,7 +26,10 @@ export default function RootLayout({
     <html lang="es" className={`${inter.variable}`}>
       <body suppressHydrationWarning={true}>
         <AuthProvider>
-          {children}
+          <main className="min-h-screen flex flex-col">
+            <div className="flex-grow">{children}</div>
+            <Footer />
+          </main>
           <Toaster />
         </AuthProvider>
       </body>
