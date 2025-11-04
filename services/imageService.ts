@@ -13,10 +13,14 @@ export interface ImageData {
 }
 
 export interface ImageListResponse {
-  total: number;
-  page: number;
-  limit: number;
-  data: ImageData[];
+  status: string;
+  message: string | null;
+  data: {
+    total: number;
+    page: number;
+    limit: number;
+    data: ImageData[];
+  };
 }
 
 export interface UploadResponse {

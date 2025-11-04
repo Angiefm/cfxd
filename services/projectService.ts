@@ -10,10 +10,14 @@ export interface Project {
 }
 
 export interface ProjectListResponse {
-  total: number;
-  page: number;
-  limit: number;
-  data: Project[];
+  status: string;
+  message: string | null;
+  data: {
+    total: number;
+    page: number;
+    limit: number;
+    data: Project[];
+  };
 }
 
 export interface CreateProjectData {

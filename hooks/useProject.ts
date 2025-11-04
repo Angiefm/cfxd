@@ -37,7 +37,8 @@ export function useProject(): UseProjectReturn {
     setIsLoading(true)
     try {
       const response: ProjectListResponse = await listProjects()
-      setProjects(response.data)
+      setProjects(response.data.data)
+      console.log('Projects loaded:', response.data.data)
     } catch (error: any) {
       console.error('Failed to load projects:', error)
       showToast("Error al cargar proyectos", "error")

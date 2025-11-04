@@ -35,7 +35,7 @@ export function useImageUpload(): UseImageUploadReturn {
     setIsLoading(true)
     try {
       const response = await listImages({ project_id: projectId })
-      setImages(response.data)
+      setImages(response.data.data)
     } catch (error) {
       console.error('Failed to load images:', error)
       showToast("Error al cargar imágenes", "error")
