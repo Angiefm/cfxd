@@ -195,6 +195,17 @@ class ApiClient {
       this.handleError(error);
     }
   }
+
+  async postWithExtendedTimeout<T>(url: string, data?: unknown, timeoutMs: number = 60000): Promise<T> {
+    try {
+      const res: AxiosResponse<T> = await this.axiosInstance.post<T>(url, data, {
+        timeout: timeoutMs,
+      });
+      return res.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
 }
 
 export const apiClient = new ApiClient();

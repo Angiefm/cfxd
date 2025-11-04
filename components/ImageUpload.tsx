@@ -24,6 +24,7 @@ export function ImageUpload({ projectId, onUploadSuccess }: ImageUploadProps) {
       fileInputRef.current.value = ''
     }
 
+    // Trigger callback to refresh gallery
     onUploadSuccess?.()
   }
 

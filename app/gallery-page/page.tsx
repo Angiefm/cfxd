@@ -4,29 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Sparkles, X, ChevronLeft, ChevronRight, ImageIcon, Loader2 } from "lucide-react"
-
-interface ImageData {
-  id: string
-  file_name: string
-  url: string
-  signed_url: string
-  mime_type: string
-  size: number
-  user_id: string
-  project_id: string | null
-  tags: string[]
-}
-
-interface ApiResponse {
-  status: string
-  message: string | null
-  data: {
-    total: number
-    page: number
-    limit: number
-    data: ImageData[]
-  }
-}
+import { GalleryService, type ImageData, type GalleryResponse } from "@/services/galleryService"
 
 export default function GalleryPage() {
   const [galleryImages, setGalleryImages] = useState<ImageData[]>([])
@@ -47,16 +25,12 @@ export default function GalleryPage() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch(
-        `http://localhost:3001/api/images/public?page=${page}&limit=${GALLERY_ITEMS_PER_PAGE}`
-      )
-      
-      if (!response.ok) {
-        throw new Error('Error al cargar las imágenes')
-      }
 
-      const data: ApiResponse = await response.json()
-      
+      const data: GalleryResponse = await GalleryService.getPublicImages({
+        page,
+        limit: GALLERY_ITEMS_PER_PAGE
+      })
+
       setGalleryImages(data.data.data)
       setTotal(data.data.total)
       setTotalPages(Math.ceil(data.data.total / GALLERY_ITEMS_PER_PAGE))

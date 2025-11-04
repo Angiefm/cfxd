@@ -7,6 +7,8 @@ import { showToast } from "@/components/Toast"
 import { ImageUpload } from "@/components/ImageUpload"
 import { ImageGallery } from "@/components/ImageGallery"
 import type { ImageData } from "@/services/imageService"
+import { processImage } from "@/services/imageService"
+import { useImageUpload } from "@/hooks/useImageUpload"
 
 function ProjectPage() {
   const params = useParams()
@@ -15,8 +17,11 @@ function ProjectPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [galleryRefreshTrigger, setGalleryRefreshTrigger] = useState(0)
 
   const projectId = params.id as string
+
+  const { total, page, limit, setPage, setLimit } = useImageUpload()
 
   useEffect(() => {
     const token = localStorage.getItem("access_token")
@@ -48,10 +53,17 @@ function ProjectPage() {
     }
 
     setIsProcessing(true)
-    setTimeout(() => {
-      setIsProcessing(false)
+    try {
+      await processImage(selectedImage.id, prompt)
       showToast("Prompt aplicado exitosamente", "success")
-    }, 2000)
+      // Trigger gallery refresh
+      setGalleryRefreshTrigger(prev => prev + 1)
+    } catch (error: any) {
+      console.error('Failed to process image:', error)
+      showToast(error.message || "Error al procesar la imagen", "error")
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   const handleSaveChanges = () => {
@@ -64,6 +76,36 @@ function ProjectPage() {
 
   const handleShare = () => {
     showToast("Enlace copiado al portapapeles", "success")
+  }
+
+  const handleImageDelete = async (imageId: string) => {
+    // If the deleted image was selected, clear the selection
+    if (selectedImage?.id === imageId) {
+      setSelectedImage(null)
+    }
+
+    // Import and call the delete function
+    const { deleteImage } = await import('@/services/imageService')
+    try {
+      await deleteImage(imageId)
+      showToast("Imagen eliminada exitosamente", "success")
+      // Trigger gallery refresh
+      setGalleryRefreshTrigger(prev => prev + 1)
+    } catch (error: any) {
+      console.error('Failed to delete image:', error)
+      showToast(error.message || "Error al eliminar imagen", "error")
+    }
+  }
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+    setGalleryRefreshTrigger(prev => prev + 1)
+  }
+
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit)
+    setPage(1) // Reset to first page when changing limit
+    setGalleryRefreshTrigger(prev => prev + 1)
   }
 
   if (isLoading || !isAuthenticated) {
@@ -128,19 +170,30 @@ function ProjectPage() {
             {/* Left Panel - Image Gallery */}
             <div className="lg:col-span-2 space-y-6">
               {/* Upload Section */}
-              <div className="glass-strong rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-foreground">Imágenes del Proyecto</h2>
-                  <ImageUpload projectId={projectId} />
-                </div>
-
-                {/* Image Gallery */}
-                <ImageGallery
+            <div className="glass-strong rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-foreground">Imágenes del Proyecto</h2>
+                <ImageUpload
                   projectId={projectId}
-                  selectedImage={selectedImage}
-                  onImageSelect={handleImageSelect}
+                  onUploadSuccess={() => setGalleryRefreshTrigger(prev => prev + 1)}
                 />
               </div>
+
+              {/* Image Gallery */}
+            <ImageGallery
+              projectId={projectId}
+              selectedImage={selectedImage}
+              onImageSelect={handleImageSelect}
+              onImageDelete={handleImageDelete}
+              refreshTrigger={galleryRefreshTrigger}
+              onRefresh={() => setGalleryRefreshTrigger(prev => prev + 1)}
+              total={total}
+              page={page}
+              limit={limit}
+              onPageChange={handlePageChange}
+              onLimitChange={handleLimitChange}
+            />
+            </div>
 
               {/* Selected Image Preview */}
               <div className="glass-strong rounded-2xl p-6 animate-fade-in-up">
