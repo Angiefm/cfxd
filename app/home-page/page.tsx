@@ -74,7 +74,7 @@ export default function HomePage() {
               Características
             </button>
             <Link
-              href="#"
+              href="/gallery-page"
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Galería
