@@ -1,11 +1,12 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useImageUpload } from "@/hooks/useImageUpload"
 import type { ImageData } from "@/services/imageService"
 import { processImage, listImages } from "@/services/imageService"
 import { showToast } from "@/components/Toast"
+import { useWebSocket } from "@/hooks/useWebSocket"
 import {
   Dialog,
   DialogContent,
@@ -38,6 +39,12 @@ export function ImageGallery({ projectId, selectedImage, onImageSelect, onImageD
    const [selectedImageForPrompt, setSelectedImageForPrompt] = useState<ImageData | null>(null)
    const [prompt, setPrompt] = useState("")
    const [isProcessing, setIsProcessing] = useState(false)
+   
+   // WebSocket integration
+   const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+   const { processedImages, errors, isConnected } = useWebSocket(token)
+   const processedImageIdsRef = useRef<Set<string>>(new Set())
+   const pendingImageIdsRef = useRef<Set<string>>(new Set())
 
    // Modal gallery state
    const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false)
@@ -48,7 +55,9 @@ export function ImageGallery({ projectId, selectedImage, onImageSelect, onImageD
    const [isModalLoading, setIsModalLoading] = useState(false)
 
   useEffect(() => {
-    loadImages(projectId)
+    if (projectId && projectId !== 'undefined' && projectId.trim() !== '') {
+      loadImages(projectId)
+    }
   }, [projectId, loadImages, refreshTrigger])
 
   const handleApplyPrompt = (image: ImageData) => {
@@ -61,25 +70,81 @@ export function ImageGallery({ projectId, selectedImage, onImageSelect, onImageD
     if (!prompt.trim() || !selectedImageForPrompt) return
 
     setIsProcessing(true)
+    showToast("Enviando solicitud de procesamiento...", "info")
+    
     try {
       await processImage(selectedImageForPrompt.id, prompt)
-      showToast("Prompt aplicado exitosamente", "success")
+      // Marcar la imagen como pendiente de procesamiento
+      pendingImageIdsRef.current.add(selectedImageForPrompt.id)
+      showToast("Solicitud recibida. La imagen se procesará en breve.", "info")
       setIsModalOpen(false)
       setSelectedImageForPrompt(null)
       setPrompt("")
-      // Trigger refresh
-      if (onRefresh) {
-        onRefresh()
-      } else {
-        loadImages(projectId)
-      }
     } catch (error: any) {
       console.error('Failed to process image:', error)
-      showToast(error.message || "Error al procesar la imagen", "error")
+      showToast(`Error al enviar imagen: ${error.message || "Error desconocido"}`, "error")
+      pendingImageIdsRef.current.delete(selectedImageForPrompt.id)
     } finally {
       setIsProcessing(false)
     }
   }
+
+  // Escuchar imágenes procesadas vía WebSocket
+  useEffect(() => {
+    processedImages.forEach((processedImage) => {
+      const imageId = processedImage.original_image_id
+      
+      // Solo mostrar notificación si esta imagen estaba pendiente
+      if (pendingImageIdsRef.current.has(imageId) && !processedImageIdsRef.current.has(processedImage.id)) {
+        processedImageIdsRef.current.add(processedImage.id)
+        pendingImageIdsRef.current.delete(imageId)
+        
+        // Convertir la imagen procesada al formato ImageData y seleccionarla
+        const processedImageData: ImageData = {
+          id: processedImage.id,
+          file_name: processedImage.file_name,
+          url: processedImage.url,
+          signed_url: processedImage.url,
+          mime_type: processedImage.mime_type,
+          size: processedImage.size,
+          user_id: processedImage.user_id,
+          project_id: processedImage.project_id,
+          created_at: processedImage.created_at,
+          tags: processedImage.tags,
+        }
+        
+        onImageSelect(processedImageData)
+        showToast("Imagen procesada exitosamente", "success")
+        
+        // Trigger refresh
+        if (onRefresh) {
+          onRefresh()
+        } else if (projectId && projectId !== 'undefined' && projectId.trim() !== '') {
+          loadImages(projectId)
+        }
+      }
+    })
+  }, [processedImages, projectId, loadImages, onRefresh, onImageSelect])
+
+  // Mostrar advertencia si WebSocket no está conectado
+  useEffect(() => {
+    if (!isConnected && token) {
+      console.warn('WebSocket no conectado - las notificaciones de procesamiento pueden no funcionar')
+    }
+  }, [isConnected, token])
+
+  // Escuchar errores de procesamiento vía WebSocket
+  useEffect(() => {
+    errors.forEach((error) => {
+      const imageId = error.image_id
+      
+      // Solo mostrar notificación si esta imagen estaba pendiente
+      if (pendingImageIdsRef.current.has(imageId)) {
+        pendingImageIdsRef.current.delete(imageId)
+        showToast(`Error al procesar imagen: ${error.error}`, "error")
+      }
+    })
+  }, [errors])
 
   // Modal gallery functions
   const openGalleryModal = () => {
@@ -91,7 +156,7 @@ export function ImageGallery({ projectId, selectedImage, onImageSelect, onImageD
     setIsModalLoading(true)
     try {
       const response = await listImages({
-        project_id: projectId,
+        ...(projectId && projectId !== 'undefined' && projectId.trim() !== '' ? { project_id: projectId } : {}),
         page,
         limit,
         sort_by: 'created_at',
@@ -374,7 +439,7 @@ export function ImageGallery({ projectId, selectedImage, onImageSelect, onImageD
       {/* Prompt Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
+            <DialogHeader>
             <DialogTitle>Aplicar Prompt a la Imagen</DialogTitle>
             <DialogDescription>
               Ingresa el prompt para procesar la imagen seleccionada.
@@ -411,7 +476,7 @@ export function ImageGallery({ projectId, selectedImage, onImageSelect, onImageD
               {isProcessing ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent mr-2" />
-                  Procesando...
+                  Enviando...
                 </>
               ) : (
                 "Aplicar Prompt"
