@@ -92,8 +92,12 @@ export function GoogleLoginButton({
   const handleGoogleResponse = async (response: any) => {
     setIsLoading(true);
     try {
+      if (!response || !response.credential) {
+        throw new Error("No se recibió credencial de Google");
+      }
+
       await loginWithGoogle(response.credential);
-      showToast("Login successful!", "success");
+      showToast("¡Inicio de sesión exitoso!", "success");
 
       if (onSuccess) {
         onSuccess();
@@ -102,7 +106,8 @@ export function GoogleLoginButton({
       }
     } catch (error: any) {
       console.error("Google auth error:", error);
-      showToast(error.message || "Google login failed", "error");
+      const errorMessage = error.message || "Error al iniciar sesión con Google";
+      showToast(errorMessage, "error");
 
       if (onError) {
         onError(error);

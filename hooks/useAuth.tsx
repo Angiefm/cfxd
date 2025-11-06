@@ -48,10 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const response = await authService.login({ email, password });
-      console.log("Respuesta completa del login:", JSON.stringify(response, null, 2));
-      console.log("response.token.access_token:", response.token.access_token);
       localStorage.setItem("access_token", response.token.access_token);
-      console.log("Token guardado en localStorage:", response.token.access_token);
       localStorage.setItem("user", JSON.stringify(response.user));
       setUser(response.user);
     } catch (error) {
@@ -82,12 +79,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const response = await googleAuthService.loginWithGoogleToken(credential);
+      
+      if (!response || !response.token || !response.token.access_token) {
+        throw new Error("Respuesta inválida del servidor de autenticación");
+      }
+      
       localStorage.setItem("access_token", response.token.access_token);
-      console.log("Token guardado en localStorage:", response.token.access_token);
       localStorage.setItem("user", JSON.stringify(response.user));
       setUser(response.user);
-    } catch (error) {
-      throw error;
+    } catch (error: any) {
+      throw new Error(error.message || "Error al iniciar sesión con Google");
     } finally {
       setIsLoading(false);
     }

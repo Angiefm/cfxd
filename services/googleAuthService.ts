@@ -1,4 +1,4 @@
-import type { LoginResponse } from "@/types/auth";
+import type { LoginResponse, GoogleLoginResponse } from "@/types/auth";
 import { apiClient } from "@/lib/api";
 
 export function initializeGoogleOneTap(callback: (credential: string) => void) {
@@ -74,7 +74,7 @@ export async function loginWithGoogleToken(
   credential: string
 ): Promise<LoginResponse> {
   try {
-    const response = await apiClient.post<LoginResponse>(
+    const response = await apiClient.post<GoogleLoginResponse>(
       "/api/auth/google/token",
       {
         credential,
@@ -82,7 +82,16 @@ export async function loginWithGoogleToken(
       }
     );
 
-    return response;
+    const transformedResponse: LoginResponse = {
+      status: "success",
+      message: "Login exitoso con Google",
+      user: response.user,
+      token: {
+        access_token: response.access_token,
+      },
+    };
+
+    return transformedResponse;
   } catch (error: any) {
     console.error("Google token error:", error);
     throw new Error(error.message || "Google auth failed");
