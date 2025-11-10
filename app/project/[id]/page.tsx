@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
 import { showToast } from "@/components/Toast"
 import { ImageUpload } from "@/components/ImageUpload"
@@ -9,6 +9,7 @@ import { ImageGallery } from "@/components/ImageGallery"
 import type { ImageData } from "@/services/imageService"
 import { processImage } from "@/services/imageService"
 import { useImageUpload } from "@/hooks/useImageUpload"
+import { useWebSocket } from "@/hooks/useWebSocket"
 
 function ProjectPage() {
   const params = useParams()
@@ -22,6 +23,12 @@ function ProjectPage() {
   const projectId = params.id as string
 
   const { total, page, limit, setPage, setLimit } = useImageUpload()
+
+  // WebSocket integration
+  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+  const { processedImages, errors, isConnected } = useWebSocket(token)
+  const processedImageIdsRef = useRef<Set<string>>(new Set())
+  const pendingImageIdsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     const token = localStorage.getItem("access_token")
@@ -53,18 +60,74 @@ function ProjectPage() {
     }
 
     setIsProcessing(true)
+    showToast("Enviando solicitud de procesamiento...", "info")
+    
     try {
       await processImage(selectedImage.id, prompt)
-      showToast("Prompt aplicado exitosamente", "success")
-      // Trigger gallery refresh
-      setGalleryRefreshTrigger(prev => prev + 1)
+      // Marcar la imagen como pendiente de procesamiento
+      pendingImageIdsRef.current.add(selectedImage.id)
+      showToast("Solicitud recibida. La imagen se procesará en breve.", "info")
     } catch (error: any) {
       console.error('Failed to process image:', error)
-      showToast(error.message || "Error al procesar la imagen", "error")
+      showToast(`Error al enviar imagen: ${error.message || "Error desconocido"}`, "error")
+      pendingImageIdsRef.current.delete(selectedImage.id)
     } finally {
       setIsProcessing(false)
     }
   }
+
+  // Escuchar imágenes procesadas vía WebSocket
+  useEffect(() => {
+    processedImages.forEach((processedImage) => {
+      const imageId = processedImage.original_image_id
+      
+      // Solo mostrar notificación si esta imagen estaba pendiente
+      if (pendingImageIdsRef.current.has(imageId) && !processedImageIdsRef.current.has(processedImage.id)) {
+        processedImageIdsRef.current.add(processedImage.id)
+        pendingImageIdsRef.current.delete(imageId)
+        
+        // Convertir la imagen procesada al formato ImageData y seleccionarla
+        const processedImageData: ImageData = {
+          id: processedImage.id,
+          file_name: processedImage.file_name,
+          url: processedImage.url,
+          signed_url: processedImage.url,
+          mime_type: processedImage.mime_type,
+          size: processedImage.size,
+          user_id: processedImage.user_id,
+          project_id: processedImage.project_id,
+          created_at: processedImage.created_at,
+          tags: processedImage.tags,
+        }
+        
+        setSelectedImage(processedImageData)
+        showToast("Imagen procesada exitosamente", "success")
+        
+        // Trigger gallery refresh
+        setGalleryRefreshTrigger(prev => prev + 1)
+      }
+    })
+  }, [processedImages])
+
+  // Mostrar advertencia si WebSocket no está conectado
+  useEffect(() => {
+    if (!isConnected && token) {
+      console.warn('WebSocket no conectado - las notificaciones de procesamiento pueden no funcionar')
+    }
+  }, [isConnected, token])
+
+  // Escuchar errores de procesamiento vía WebSocket
+  useEffect(() => {
+    errors.forEach((error) => {
+      const imageId = error.image_id
+      
+      // Solo mostrar notificación si esta imagen estaba pendiente
+      if (pendingImageIdsRef.current.has(imageId)) {
+        pendingImageIdsRef.current.delete(imageId)
+        showToast(`Error al procesar imagen: ${error.error}`, "error")
+      }
+    })
+  }, [errors])
 
   const handleSaveChanges = () => {
     showToast("Cambios guardados exitosamente", "success")
@@ -206,12 +269,12 @@ function ProjectPage() {
                   </button>
                 </div>
 
-                <div className="aspect-video rounded-xl overflow-hidden bg-secondary/20">
+                <div className="aspect-video rounded-xl overflow-hidden bg-secondary/20 flex items-center justify-center">
                   {selectedImage ? (
                     <img
                       src={selectedImage.signed_url || selectedImage.url}
                       alt={selectedImage.file_name}
-                      className="w-full h-full object-cover"
+                      className="max-w-full max-h-full w-auto h-auto object-contain"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted-foreground">
@@ -232,7 +295,9 @@ function ProjectPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground">Editor de Prompt</h3>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-foreground">Editor de Prompt</h3>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
@@ -252,7 +317,7 @@ function ProjectPage() {
                       {isProcessing ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
-                          Procesando...
+                          Enviando...
                         </>
                       ) : (
                         <>

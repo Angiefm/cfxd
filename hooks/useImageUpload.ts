@@ -32,7 +32,7 @@ export function useImageUpload(): UseImageUploadReturn {
       const currentPage = pageParam || page
       const currentLimit = limitParam || limit
       const response = await listImages({
-        project_id: projectId,
+        ...(projectId && projectId !== 'undefined' && projectId.trim() !== '' ? { project_id: projectId } : {}),
         page: currentPage,
         limit: currentLimit,
         sort_by: 'created_at',

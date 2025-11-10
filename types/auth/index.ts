@@ -36,6 +36,13 @@ export interface LoginResponse {
   };
 }
 
+export interface GoogleLoginResponse {
+  success: boolean;
+  access_token: string;
+  refresh_token: string;
+  user: User;
+}
+
 export interface ApiError {
   code: string;
   message: string;

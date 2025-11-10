@@ -57,7 +57,6 @@ class ApiClient {
           const token = localStorage.getItem('access_token');
           if (token && token !== 'undefined' && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
-            console.log("Enviando token en header:", config.headers.Authorization);
           }
         }
         return config;

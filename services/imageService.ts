@@ -33,7 +33,7 @@ export interface UploadResponse {
 export async function uploadImages(files: FileList, projectId?: string): Promise<UploadResponse> {
   const formData = new FormData();
 
-  if (projectId) {
+  if (projectId && projectId !== 'undefined' && projectId.trim() !== '') {
     formData.append('project_id', projectId);
   }
 
@@ -62,7 +62,7 @@ export async function listImages(params?: {
 }): Promise<ImageListResponse> {
   const queryParams = new URLSearchParams();
 
-  if (params?.project_id) {
+  if (params?.project_id && params.project_id !== 'undefined' && params.project_id.trim() !== '') {
     queryParams.append('project_id', params.project_id);
   }
 
