@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/Button"
 import { Input } from "@/components/Input"
 import { showToast } from "@/components/Toast"
-import { ProfileService } from "@/lib/services/profileService"
+import { ProfileService } from "@/services/profileService"
 import { Camera, ArrowLeft, Sparkles } from "lucide-react"
 import type { ProfileData, UpdateProfileData } from "@/lib/services/profileService"
 

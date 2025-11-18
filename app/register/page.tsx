@@ -52,12 +52,13 @@ export default function RegisterPage() {
         if (!/[A-Z]/.test(value)) return "Debe contener una mayúscula";
         if (!/[a-z]/.test(value)) return "Debe contener una minúscula";
         if (!/[0-9]/.test(value)) return "Debe contener un número";
+        if (!/[@$!%*?&]/.test(value)) return "Debe contener un carácter especial";
         return "";
       },
       phone: (value) => {
         if (!value) return "El teléfono es obligatorio";
-        if (!/^\+?[\d\s\-\(\)]{8,}$/.test(value))
-          return "Formato de teléfono inválido";
+        if (!/^\d{10,15}$/.test(value))
+          return "El teléfono debe tener entre 10 y 15 dígitos";
         return "";
       },
     },
@@ -69,6 +70,7 @@ export default function RegisterPage() {
     uppercase: /[A-Z]/.test(values.password),
     lowercase: /[a-z]/.test(values.password),
     number: /[0-9]/.test(values.password),
+    special: /[@$!%*?&]/.test(values.password),
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -161,7 +163,7 @@ export default function RegisterPage() {
             onChange={handleChange}
             onBlur={handleBlur}
             error={errors.phone}
-            placeholder="+1 234 567 8900"
+            placeholder="1234567890"
             autoComplete="tel"
           />
 
@@ -198,6 +200,7 @@ export default function RegisterPage() {
                     text="Una letra minúscula"
                   />
                   <PasswordCheck met={passwordChecks.number} text="Un número" />
+                  <PasswordCheck met={passwordChecks.special} text="Un carácter especial" />
                 </div>
               </div>
             )}

@@ -5,69 +5,33 @@ import type React from "react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import { useProject } from "@/hooks/useProject"
 import { Button } from "@/components/Button"
 import { showToast } from "@/components/Toast"
 import { ProjectCard } from "@/components/ProjectCard"
-import { LogOut, Sparkles, ImageIcon, Zap, Plus, FolderOpen, User } from "lucide-react"
-import type { Project } from "@/types/project"
+import { CreateProjectModal } from "@/components/CreateProjectModal"
+import { LogOut, Sparkles, ImageIcon, Zap, Plus, FolderOpen, User, Grid, Images } from "lucide-react"
+import type { Project } from "@/services/projectService"
 
 export default function DashboardPage() {
   const router = useRouter()
   const { user, logout, isAuthenticated, isLoading } = useAuth()
-  const [projects, setProjects] = useState<Project[]>([])
-
-  const mockProjects: Project[] = [
-    {
-      id: "1",
-      title: "Fotografías de Paisajes",
-      description: "Colección de imágenes de paisajes naturales para procesamiento",
-      imageCount: 24,
-      createdAt: "2024-01-15T10:30:00Z",
-      updatedAt: "2024-01-20T14:45:00Z",
-      thumbnailUrl: "/placeholder.jpg"
-    },
-    {
-      id: "2", 
-      title: "Retratos Profesionales",
-      description: "Sesión de retratos corporativos que requieren optimización",
-      imageCount: 12,
-      createdAt: "2024-01-18T09:15:00Z",
-      updatedAt: "2024-01-18T16:30:00Z",
-      thumbnailUrl: "/placeholder.jpg"
-    },
-    {
-      id: "3",
-      title: "Productos E-commerce",
-      description: "Imágenes de productos para tienda online",
-      imageCount: 45,
-      createdAt: "2024-01-20T11:00:00Z", 
-      updatedAt: "2024-01-22T13:20:00Z",
-      thumbnailUrl: "/placeholder.jpg"
-    },
-    {
-      id: "4",
-      title: "Eventos Corporativos",
-      imageCount: 8,
-      createdAt: "2024-01-22T08:45:00Z",
-      updatedAt: "2024-01-22T17:10:00Z",
-      thumbnailUrl: "/placeholder.jpg"
-    }
-  ]
+  const { projects, isLoading: isProjectsLoading, createNewProject, isCreating, refreshProjects } = useProject()
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push("/login")
-    } else if (isAuthenticated) {
-      // aqui verifico token valido
-      const token = localStorage.getItem("access_token")
-      if (!token) {
-        console.log('[Dashboard] No hay token válido, redirigiendo a login')
-        router.push("/login")
-        return
-      }
-      setProjects(mockProjects)
     }
   }, [isAuthenticated, isLoading, router])
+
+  // Force refresh projects when component mounts or authentication changes
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      // Force refresh to ensure projects are loaded
+      refreshProjects()
+    }
+  }, [isAuthenticated, isLoading, refreshProjects])
 
   const handleLogout = async () => {
     try {
@@ -91,11 +55,23 @@ export default function DashboardPage() {
   }
 
   const handleProjectClick = (project: Project) => {
-    showToast(`Abriendo proyecto: ${project.title}`, "success")
+    router.push(`/project/${project.id}`)
   }
 
   const handleProfileClick = () => {
     router.push("/profile")
+  }
+
+  const handleGalleryClick = () => {
+    router.push("/gallery")
+  }
+
+  const handleCreateProject = () => {
+    setIsCreateModalOpen(true)
+  }
+
+  const handleCreateProjectSubmit = async (name: string, description: string) => {
+    await createNewProject({ name, description })
   }
 
   if (isLoading || !isAuthenticated) {
@@ -164,8 +140,8 @@ export default function DashboardPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4 sm:mb-0">
                 Mis Proyectos
               </h2>
-              <Button 
-                onClick={() => showToast("Función de crear proyecto próximamente", "info")}
+              <Button
+                onClick={handleCreateProject}
                 className="w-full sm:w-auto"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -201,6 +177,45 @@ export default function DashboardPage() {
                 </Button>
               </div>
             )}
+          </div>
+
+          {/* Gallery Section */}
+          <div className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 sm:mb-0">
+                Mi Galería
+              </h2>
+            </div>
+            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer" onClick={handleGalleryClick}>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                  <Images className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Ver Todas Mis Imágenes
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-4">
+                    Explora y filtra todas tus imágenes procesadas. Busca por proyecto, etiquetas, fecha y más.
+                  </p>
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <Grid className="w-4 h-4" />
+                      Vista de galería
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <ImageIcon className="w-4 h-4" />
+                      Filtros avanzados
+                    </span>
+                  </div>
+                </div>
+                <div className="text-gray-400">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Feature Cards */}
@@ -294,6 +309,14 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* Create Project Modal */}
+      <CreateProjectModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreateProject={handleCreateProjectSubmit}
+        isCreating={isCreating}
+      />
     </div>
   )
 }

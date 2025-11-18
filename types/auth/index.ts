@@ -28,7 +28,18 @@ export interface GoogleAuthCredentials {
 }
 
 export interface LoginResponse {
+  status: string;
+  message: string;
+  user: User;
+  token: {
+    access_token: string;
+  };
+}
+
+export interface GoogleLoginResponse {
+  success: boolean;
   access_token: string;
+  refresh_token: string;
   user: User;
 }
 
