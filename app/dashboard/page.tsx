@@ -10,7 +10,7 @@ import { Button } from "@/components/Button"
 import { showToast } from "@/components/Toast"
 import { ProjectCard } from "@/components/ProjectCard"
 import { CreateProjectModal } from "@/components/CreateProjectModal"
-import { LogOut, Sparkles, ImageIcon, Zap, Plus, FolderOpen, User } from "lucide-react"
+import { LogOut, Sparkles, ImageIcon, Zap, Plus, FolderOpen, User, Grid, Images } from "lucide-react"
 import type { Project } from "@/services/projectService"
 
 export default function DashboardPage() {
@@ -60,6 +60,10 @@ export default function DashboardPage() {
 
   const handleProfileClick = () => {
     router.push("/profile")
+  }
+
+  const handleGalleryClick = () => {
+    router.push("/gallery")
   }
 
   const handleCreateProject = () => {
@@ -173,6 +177,45 @@ export default function DashboardPage() {
                 </Button>
               </div>
             )}
+          </div>
+
+          {/* Gallery Section */}
+          <div className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 sm:mb-0">
+                Mi Galería
+              </h2>
+            </div>
+            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer" onClick={handleGalleryClick}>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                  <Images className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Ver Todas Mis Imágenes
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-4">
+                    Explora y filtra todas tus imágenes procesadas. Busca por proyecto, etiquetas, fecha y más.
+                  </p>
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <Grid className="w-4 h-4" />
+                      Vista de galería
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <ImageIcon className="w-4 h-4" />
+                      Filtros avanzados
+                    </span>
+                  </div>
+                </div>
+                <div className="text-gray-400">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Feature Cards */}
